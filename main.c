@@ -1,12 +1,66 @@
 #include <stdio.h>
 #include <gtk/gtk.h>
 
-static void on_open_response()
-{
+typedef struct {
+    GtkWidget *window;
+    GtkWidget *scrollWindow;
 
+    GtkWidget *box;
+    GtkWidget *button;
+
+    GtkWidget *textView;
+    GtkTextBuffer *textBuffer;
+} GlobalWindow;
+
+static void loadFile(GObject *source, GAsyncResult *result, GlobalWindow *globalWindow)
+{
+    g_printerr("Converting pointer.\n");
+
+    GFile *file = G_FILE(source);
+    g_autofree char *contents = NULL;
+    gsize lenght = 0;
+
+    g_autoptr (GError) error = NULL;
+
+    g_file_load_contents_finish(file, result, &contents, &lenght, NULL, &error);
+
+    if(error != NULL)
+    {
+        g_printerr("Unable to open file at %s. ERROR: %s\n", g_file_peek_path(file), error->message);
+        return;
+    }
+
+    g_printerr("Setting new buffer text.\n");
+
+    
+    if (globalWindow == NULL) 
+    {
+        g_printerr("NULL.\n");
+    }   
+    gtk_text_buffer_set_text(globalWindow->textBuffer, contents, lenght);
+    g_printerr("Sucessful.\n");
+    GtkTextIter *cursor;
+    gtk_text_buffer_get_start_iter(globalWindow->textBuffer, cursor);
+    gtk_text_buffer_place_cursor(globalWindow->textBuffer, cursor);
 }
 
-static void onButtonClick(GtkButton *button, GtkWindow *window)
+static void onSelectFile(GObject *source, GAsyncResult *result, gpointer globalWindow)
+{
+    GlobalWindow *window = globalWindow;
+    GtkFileDialog *dialog = GTK_FILE_DIALOG (source);
+    g_autoptr (GFile) file = gtk_file_dialog_open_finish(dialog, result, NULL);
+
+    if(file == NULL)
+    {
+        g_printerr("File is NULL.\n");
+        return;
+    }
+
+    g_printerr("Selected file succesfully. Loading file contents.\n");
+    g_file_load_contents_async(file, NULL, (GAsyncReadyCallback) loadFile, window);
+}
+
+static void onButtonClick(GtkButton *button, GtkWindow *window, gpointer globalWindow)
 {
     const char *buttonLabel = gtk_button_get_label(button);
 
@@ -19,8 +73,9 @@ static void onButtonClick(GtkButton *button, GtkWindow *window)
         // Creates a new file dialog
         GtkFileDialog *fileDialog = gtk_file_dialog_new();
 
+        g_printerr("Created file dialog.\n");
         // TODO: actually input some files
-        gtk_file_dialog_open(fileDialog, GTK_WINDOW(window), NULL, on_open_response, NULL);
+        gtk_file_dialog_open(fileDialog, GTK_WINDOW(window), NULL, onSelectFile, globalWindow);
     }
     else // If label is "Opening..."
     {
@@ -30,14 +85,19 @@ static void onButtonClick(GtkButton *button, GtkWindow *window)
 
 static void activate(GtkApplication *app, gpointer user_data)
 {
-    GtkWidget *window;
-    GtkWidget *scrollWindow;
+    GlobalWindow *globalWindow = malloc(sizeof(GlobalWindow));
 
-    GtkWidget *box;
-    GtkWidget *button;
+    
 
-    GtkWidget *textView;
-    GtkTextBuffer *textBuffer;
+    GtkWidget *window = globalWindow->window;
+    GtkWidget *scrollWindow = globalWindow->scrollWindow;
+
+    GtkWidget *box = globalWindow->box;
+    GtkWidget *button = globalWindow->button;
+
+    GtkWidget *textView = globalWindow->textView;
+    GtkTextBuffer *textBuffer = globalWindow->textBuffer;
+
     gchar *defaultText = "Ipsum louco latim doido";
 
     // Creates a new window
@@ -51,9 +111,10 @@ static void activate(GtkApplication *app, gpointer user_data)
     gtk_box_set_homogeneous(GTK_BOX(box), TRUE);
     gtk_window_set_child(GTK_WINDOW(window), box);
 
+
     // Creates button and adds it to box
     button = gtk_button_new_with_label("Open");
-    g_signal_connect(button, "clicked", G_CALLBACK(onButtonClick), NULL);
+    g_signal_connect(button, "clicked", G_CALLBACK(onButtonClick), globalWindow);
     gtk_box_append(GTK_BOX(box), button);
 
     // Creates a scrollable window and adds it to box
