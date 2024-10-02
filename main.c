@@ -33,15 +33,8 @@ static void loadFile(GObject *source, GAsyncResult *result, GlobalWindow *global
     g_printerr("Setting new buffer text.\n");
 
     
-    if (globalWindow == NULL) 
-    {
-        g_printerr("NULL.\n");
-    }   
     gtk_text_buffer_set_text(globalWindow->textBuffer, contents, lenght);
     g_printerr("Sucessful.\n");
-    GtkTextIter *cursor;
-    gtk_text_buffer_get_start_iter(globalWindow->textBuffer, cursor);
-    gtk_text_buffer_place_cursor(globalWindow->textBuffer, cursor);
 }
 
 static void onSelectFile(GObject *source, GAsyncResult *result, gpointer globalWindow)
@@ -87,53 +80,42 @@ static void activate(GtkApplication *app, gpointer user_data)
 {
     GlobalWindow *globalWindow = malloc(sizeof(GlobalWindow));
 
-    
-
-    GtkWidget *window = globalWindow->window;
-    GtkWidget *scrollWindow = globalWindow->scrollWindow;
-
-    GtkWidget *box = globalWindow->box;
-    GtkWidget *button = globalWindow->button;
-
-    GtkWidget *textView = globalWindow->textView;
-    GtkTextBuffer *textBuffer = globalWindow->textBuffer;
-
     gchar *defaultText = "Ipsum louco latim doido";
 
     // Creates a new window
     // Set size and title
-    window = gtk_application_window_new(GTK_APPLICATION(app));
-    gtk_window_set_title(GTK_WINDOW(window), "Editor Foda");
-    gtk_window_set_default_size(GTK_WINDOW(window), 600, 400);
+    globalWindow->window = gtk_application_window_new(GTK_APPLICATION(app));
+    gtk_window_set_title(GTK_WINDOW(globalWindow->window), "Editor Foda");
+    gtk_window_set_default_size(GTK_WINDOW(globalWindow->window), 600, 400);
 
     // Creates box and sets it as child of window
-    box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_box_set_homogeneous(GTK_BOX(box), TRUE);
-    gtk_window_set_child(GTK_WINDOW(window), box);
+    globalWindow->box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_box_set_homogeneous(GTK_BOX(globalWindow->box), TRUE);
+    gtk_window_set_child(GTK_WINDOW(globalWindow->window), globalWindow->box);
 
 
     // Creates button and adds it to box
-    button = gtk_button_new_with_label("Open");
-    g_signal_connect(button, "clicked", G_CALLBACK(onButtonClick), globalWindow);
-    gtk_box_append(GTK_BOX(box), button);
+    globalWindow->button = gtk_button_new_with_label("Open");
+    g_signal_connect(globalWindow->button, "clicked", G_CALLBACK(onButtonClick), globalWindow);
+    gtk_box_append(GTK_BOX(globalWindow->box), globalWindow->button);
 
     // Creates a scrollable window and adds it to box
-    scrollWindow = gtk_scrolled_window_new();
-    gtk_box_append(GTK_BOX(box), scrollWindow);
+    globalWindow->scrollWindow = gtk_scrolled_window_new();
+    gtk_box_append(GTK_BOX(globalWindow->box), globalWindow->scrollWindow);
 
     // Creates text view and buffer for text editing
-    textView = gtk_text_view_new();
-    textBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textView));
-    gtk_text_buffer_set_text(textBuffer, defaultText, -1);
+    globalWindow->textView = gtk_text_view_new();
+    globalWindow->textBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(globalWindow->textView));
+    gtk_text_buffer_set_text(globalWindow->textBuffer, defaultText, -1);
 
     // Remove all line wrapping
-    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(textView), GTK_WRAP_NONE);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(globalWindow->textView), GTK_WRAP_NONE);
 
     // Sets textView as child of scrolled window
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrollWindow), textView);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(globalWindow->scrollWindow), globalWindow->textView);
 
     // Shows window
-    gtk_window_present(GTK_WINDOW(window));
+    gtk_window_present(GTK_WINDOW(globalWindow->window));
 }
 
 int main(int argc, char **argv)
