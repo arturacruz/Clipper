@@ -57,6 +57,7 @@ static void loadFile(GObject *source, GAsyncResult *result, GlobalWindow *global
 
 static void saveFile(GObject *source, GAsyncResult *result, GlobalWindow *globalWindow)
 {
+    g_printerr("Saving file...\n");
     GFile *file = G_FILE(source);
     g_autoptr (GError) error = NULL;
 
@@ -84,7 +85,7 @@ static void onSelectFileLoad(GObject *source, GAsyncResult *result, gpointer glo
         return;
     }
 
-    g_printerr("Selected file succesfully. Saving contents.\n");
+    g_printerr("Selected file succesfully. Loading contents.\n");
     g_file_load_contents_async(file, NULL, (GAsyncReadyCallback) loadFile, window);
 }
 
@@ -100,11 +101,10 @@ static void onSelectFileSave(GObject *source, GAsyncResult *result, gpointer glo
         return;
     }
 
-    g_printerr("Selected file succesfully. Loading contents.\n");
+    g_printerr("Selected file succesfully. Saving contents.\n");
     int currentPageIndex = gtk_notebook_get_current_page(GTK_NOTEBOOK(window->notebook));
-    GtkWidget *currentPage = gtk_notebook_get_nth_page(GTK_NOTEBOOK(window->notebook), currentPageIndex);
+    GtkWidget *scrollWindow = gtk_notebook_get_nth_page(GTK_NOTEBOOK(window->notebook), currentPageIndex);
 
-    GtkWidget *scrollWindow = gtk_notebook_page_get_child(GTK_NOTEBOOK_PAGE(currentPage));
     GtkWidget *textView = gtk_scrolled_window_get_child(GTK_SCROLLED_WINDOW(scrollWindow));
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textView));
 
@@ -128,24 +128,22 @@ static void onSelectFileSave(GObject *source, GAsyncResult *result, gpointer glo
     g_file_replace_contents_bytes_async(file, bytes, NULL, FALSE, G_FILE_CREATE_NONE, NULL, (GAsyncReadyCallback) saveFile, window);
 }
 
-static void onButtonLoadClick(gpointer globalWindow)
+static void onButtonLoadClick(GtkButton *button, gpointer globalWindow)
 {
     g_printerr("Clicked LOAD button.\n");
 
     GlobalWindow *window = globalWindow;
 
-
-
-    const char *buttonLabel = gtk_button_get_label(GTK_BUTTON(window->buttonLoad));
+    const char *buttonLabel = gtk_button_get_label(button);
 
     if(g_strcmp0(buttonLabel, "Open") != 0)
     {
-        gtk_button_set_label(GTK_BUTTON(window->buttonLoad), "Open");
+        gtk_button_set_label(button, "Open");
         return;
     }
 
     // Set label to "Opening..."
-    gtk_button_set_label(GTK_BUTTON(window->buttonLoad), "Opening...");
+    gtk_button_set_label(button, "Opening...");
 
     // Creates a new file dialog
     GtkFileDialog *fileDialog = gtk_file_dialog_new();
@@ -156,26 +154,27 @@ static void onButtonLoadClick(gpointer globalWindow)
     
 }
 
-static void onButtonSaveClick(gpointer globalWindow)
+static void onButtonSaveClick(GtkButton *button, gpointer globalWindow)
 {
     GlobalWindow *window = globalWindow;
+    GtkNotebook *notebook = GTK_NOTEBOOK(window->notebook);
 
-    if(gtk_notebook_get_current_page(GTK_NOTEBOOK(window->notebook)) == -1)
+    if(gtk_notebook_get_current_page(notebook) == -1)
     {
         g_printerr("No pages currently open to save.\n");
         return;
     }
 
-    const char *buttonLabel = gtk_button_get_label(GTK_BUTTON(window->buttonSave));
+    const char *buttonLabel = gtk_button_get_label(GTK_BUTTON(button));
 
     if(g_strcmp0(buttonLabel, "Save") != 0)
     {
-        gtk_button_set_label(GTK_BUTTON(window->buttonSave), "Save");
+        gtk_button_set_label(GTK_BUTTON(button), "Save");
         return;
     }
 
     // Set label to "Opening..."
-    gtk_button_set_label(GTK_BUTTON(window->buttonSave), "Saving...");
+    gtk_button_set_label(GTK_BUTTON(button), "Saving...");
 
     GtkFileDialog *fileDialog = gtk_file_dialog_new();
     gtk_file_dialog_save(fileDialog, GTK_WINDOW(window->window), NULL, onSelectFileSave, globalWindow);
