@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0"/>
+  <object class="GtkApplicationWindow" id="window">
+    <property name="default-width">800</property>
+    <property name="default-height">600</property>
+    <property name="title">Clipper</property>
+    <child>
+      <object class="GtkNotebook" id="notebook"></object>
+    </child>
+    <child type="titlebar">
+      <object class="GtkHeaderBar" id="headerBar">
+        <child>
+          <object class="GtkMenuButton" id="menuButton">
+            <property name="menu-model">mainMenu</property>
+            <child type="image">
+              <object class="GtkImage">
+                <property name="icon-name">open-menu-symbolic</property>
+              </object>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+  <menu id="mainMenu">
+    <section id="fileSection">
+      <item>
+        <attribute name="label">New</attribute>
+        <attribute name="action">app.new</attribute>
+      </item>
+      <item>
+        <attribute name="label">Open</attribute>
+        <attribute name="action">app.open</attribute>
+      </item>
+      <item>
+        <attribute name="label">Save</attribute>
+        <attribute name="action">app.save</attribute>
+      </item>
+      <item>
+        <attribute name="label">Save as</attribute>
+        <attribute name="action">app.saveas</attribute>
+      </item>
+    </section>
+    <section id="settingsSection">
+      <submenu id="settingsMenu">
+        <attribute name="label">Settings</attribute>
+        <submenu id="lineBreakMenu">
+          <attribute name="label">Line breakage</attribute>
+          <item>
+            <attribute name="label">No Break</attribute>
+          </item>
+          <item>
+            <attribute name="label">Wrap</attribute>
+          </item>
+        </submenu>
+      </submenu>
+    </section>
+  </menu>
+</interface>

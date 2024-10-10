@@ -2,12 +2,13 @@
 #include <gtk/gtk.h>
 
 typedef struct {
-    GtkWidget *window;
-    GtkWidget *notebook;
+    GtkWindow *window;
 
-    GtkWidget *box;
-    GtkWidget *buttonLoad;
-    GtkWidget *buttonSave;
+    GtkWidget *headerBar;
+    GtkWidget *menuButton;
+    GtkWidget *mainMenu;
+
+    GtkWidget *notebook;
 
 } GlobalWindow;
 
@@ -51,7 +52,6 @@ static void loadFile(GObject *source, GAsyncResult *result, GlobalWindow *global
     GtkNotebookPage *notebookPage = gtk_notebook_get_page(GTK_NOTEBOOK(globalWindow->notebook), scrollWindow);
     g_object_set(notebookPage, "tab-expand", TRUE, NULL);
 
-    gtk_button_set_label(GTK_BUTTON(globalWindow->buttonLoad), "Open");
     g_printerr("Sucessful load.\n");
 }
 
@@ -69,7 +69,6 @@ static void saveFile(GObject *source, GAsyncResult *result, GlobalWindow *global
         return;
     }
 
-    gtk_button_set_label(GTK_BUTTON(globalWindow->buttonSave), "Save");
     g_printerr("Sucessful save.\n");
 }
 
@@ -128,33 +127,22 @@ static void onSelectFileSave(GObject *source, GAsyncResult *result, gpointer glo
     g_file_replace_contents_bytes_async(file, bytes, NULL, FALSE, G_FILE_CREATE_NONE, NULL, (GAsyncReadyCallback) saveFile, window);
 }
 
-static void onButtonLoadClick(GtkButton *button, gpointer globalWindow)
+static void onButtonLoadClick(GSimpleAction *action, GVariant *state, gpointer globalWindow)
 {
     g_printerr("Clicked LOAD button.\n");
 
     GlobalWindow *window = globalWindow;
-
-    const char *buttonLabel = gtk_button_get_label(button);
-
-    if(g_strcmp0(buttonLabel, "Open") != 0)
-    {
-        gtk_button_set_label(button, "Open");
-        return;
-    }
-
-    // Set label to "Opening..."
-    gtk_button_set_label(button, "Opening...");
 
     // Creates a new file dialog
     GtkFileDialog *fileDialog = gtk_file_dialog_new();
     g_printerr("Created file dialog.\n");
 
     // TODO: actually input some files
-    gtk_file_dialog_open(fileDialog, GTK_WINDOW(window->window), NULL, onSelectFileLoad, globalWindow);
+    gtk_file_dialog_open(fileDialog, window->window, NULL, onSelectFileLoad, globalWindow);
     
 }
 
-static void onButtonSaveClick(GtkButton *button, gpointer globalWindow)
+static void onButtonSaveClick(GSimpleAction *action, GVariant *state, gpointer globalWindow)
 {
     GlobalWindow *window = globalWindow;
     GtkNotebook *notebook = GTK_NOTEBOOK(window->notebook);
@@ -165,17 +153,6 @@ static void onButtonSaveClick(GtkButton *button, gpointer globalWindow)
         return;
     }
 
-    const char *buttonLabel = gtk_button_get_label(GTK_BUTTON(button));
-
-    if(g_strcmp0(buttonLabel, "Save") != 0)
-    {
-        gtk_button_set_label(GTK_BUTTON(button), "Save");
-        return;
-    }
-
-    // Set label to "Opening..."
-    gtk_button_set_label(GTK_BUTTON(button), "Saving...");
-
     GtkFileDialog *fileDialog = gtk_file_dialog_new();
     gtk_file_dialog_save(fileDialog, GTK_WINDOW(window->window), NULL, onSelectFileSave, globalWindow);
 }
@@ -184,33 +161,30 @@ static void activate(GtkApplication *app, gpointer user_data)
 {
     GlobalWindow *globalWindow = malloc(sizeof(GlobalWindow));
 
+    GtkBuilder *builder = gtk_builder_new_from_file("ui/clipper.ui");
+
+
     // Creates a new window
     // Set size and title
-    globalWindow->window = gtk_application_window_new(GTK_APPLICATION(app));
-    gtk_window_set_title(GTK_WINDOW(globalWindow->window), "Editor Foda");
-    gtk_window_set_default_size(GTK_WINDOW(globalWindow->window), 600, 400);
+    globalWindow->window = GTK_WINDOW(gtk_builder_get_object(builder, "window"));
+    gtk_window_set_application (globalWindow->window, app);
 
-    // Creates box and sets it as child of window
-    globalWindow->box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_box_set_homogeneous(GTK_BOX(globalWindow->box), TRUE);
-    gtk_window_set_child(GTK_WINDOW(globalWindow->window), globalWindow->box);
+    globalWindow->notebook = GTK_WIDGET(gtk_builder_get_object(builder, "notebook"));
 
-    
-    globalWindow->buttonSave = gtk_button_new_with_label("Save");
-    g_signal_connect(globalWindow->buttonSave, "clicked", G_CALLBACK(onButtonSaveClick), globalWindow);
-    gtk_box_append(GTK_BOX(globalWindow->box), globalWindow->buttonSave);
+    globalWindow->mainMenu = GTK_WIDGET(gtk_builder_get_object(builder, "mainMenu"));
+    const GActionEntry appEntries[] = {
+        {"open", onButtonLoadClick, NULL, NULL, NULL},
+        {"save", onButtonSaveClick, NULL, NULL, NULL}
+    };
 
-    // Creates button and adds it to box
-    globalWindow->buttonLoad = gtk_button_new_with_label("Open");
-    g_signal_connect(globalWindow->buttonLoad, "clicked", G_CALLBACK(onButtonLoadClick), globalWindow);
-    gtk_box_append(GTK_BOX(globalWindow->box), globalWindow->buttonLoad);
+    g_action_map_add_action_entries(G_ACTION_MAP(app), appEntries, G_N_ELEMENTS(appEntries), globalWindow);
 
-    globalWindow->notebook = gtk_notebook_new();
-    gtk_box_append(GTK_BOX(globalWindow->box), globalWindow->notebook);
     
 
     // Shows window
-    gtk_window_present(GTK_WINDOW(globalWindow->window));
+    gtk_window_present(globalWindow->window);
+
+    g_object_unref(builder);
 }
 
 int main(int argc, char **argv)
