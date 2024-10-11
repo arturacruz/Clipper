@@ -12,6 +12,24 @@ typedef struct {
 
 } GlobalWindow;
 
+static void newNotebookPage(GlobalWindow *globalWindow)
+{
+    GtkWidget *scrollWindow = gtk_scrolled_window_new();
+    GtkWidget *textView = gtk_text_view_new();
+    GtkTextBuffer *textBuffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(textView));
+
+    const char *text = "";
+    gtk_text_buffer_set_text(textBuffer, text, 0);
+    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(textView), GTK_WRAP_NONE);
+
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrollWindow), textView);
+    GtkWidget *titleLabel = gtk_label_new("New file");
+
+    gtk_notebook_append_page(GTK_NOTEBOOK(globalWindow->notebook), scrollWindow, titleLabel);
+    GtkNotebookPage *notebookPage = gtk_notebook_get_page(GTK_NOTEBOOK(globalWindow->notebook), scrollWindow);
+    g_object_set(notebookPage, "tab-expand", TRUE, NULL);
+}
+
 static void loadFile(GObject *source, GAsyncResult *result, GlobalWindow *globalWindow)
 {
     GFile *file = G_FILE(source);
@@ -142,6 +160,13 @@ static void onButtonLoadClick(GSimpleAction *action, GVariant *state, gpointer g
     
 }
 
+static void onButtonNewClick(GSimpleAction *action, GVariant *state, gpointer globalWindow)
+{
+    GlobalWindow *window = globalWindow;
+    newNotebookPage(window);
+    g_print("Created new page.\n");
+}
+
 static void onButtonSaveClick(GSimpleAction *action, GVariant *state, gpointer globalWindow)
 {
     GlobalWindow *window = globalWindow;
@@ -173,8 +198,9 @@ static void activate(GtkApplication *app, gpointer user_data)
 
     globalWindow->mainMenu = GTK_WIDGET(gtk_builder_get_object(builder, "mainMenu"));
     const GActionEntry appEntries[] = {
+        {"new", onButtonNewClick, NULL, NULL, NULL},
         {"open", onButtonLoadClick, NULL, NULL, NULL},
-        {"save", onButtonSaveClick, NULL, NULL, NULL}
+        {"saveas", onButtonSaveClick, NULL, NULL, NULL}
     };
 
     g_action_map_add_action_entries(G_ACTION_MAP(app), appEntries, G_N_ELEMENTS(appEntries), globalWindow);
