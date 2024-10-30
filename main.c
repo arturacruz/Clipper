@@ -198,9 +198,6 @@ static void activate(GtkApplication *app, gpointer user_data)
 
     GtkBuilder *builder = gtk_builder_new_from_file(path);
 
-    free(username);
-
-
     // Creates a new window
     // Set size and title
     globalWindow->window = GTK_WINDOW(gtk_builder_get_object(builder, "window"));
