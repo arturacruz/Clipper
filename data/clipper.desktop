@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Clipper
+Encoding=UTF-8
+Version=0.1
+Type=Application
+Terminal=false
+Exec=/bin/clipper
+Icon=~/.local/share/clipper/data/tempIcon.png

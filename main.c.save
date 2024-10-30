@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <gtk/gtk.h>
-#include <unistd.h>
-#include <stdlib.h>
 
 typedef struct {
     GtkWindow *window;
@@ -187,18 +185,9 @@ static void onButtonSaveClick(GSimpleAction *action, GVariant *state, gpointer g
 static void activate(GtkApplication *app, gpointer user_data)
 {
     GlobalWindow *globalWindow = malloc(sizeof(GlobalWindow));
-    char *username = malloc(50 * sizeof(char));
-    username = getlogin();
 
-    char path[100] = "/home/";
-    char dir[] = "/.local/share/clipper/ui/clipper.ui";
-
-    strcat(path, username);
-    strcat(path, dir);
-
-    GtkBuilder *builder = gtk_builder_new_from_file(path);
-
-    free(username);
+	
+    GtkBuilder *builder = gtk_builder_new_from_file("~/.local/share/clipper/ui/clipper.ui");
 
 
     // Creates a new window
@@ -227,13 +216,12 @@ static void activate(GtkApplication *app, gpointer user_data)
 
 int main(int argc, char **argv)
 {
-
+    g_printerr("Initializing application.\n");
     // Creates the application
     GtkApplication *app;
     app = gtk_application_new("com.github.arturacruz.editor", G_APPLICATION_DEFAULT_FLAGS);
 
     g_printerr("Activating app.\n");
-    g_printerr("Initializing application.\n");
     // Connects the activate signal to the activate function
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
 
